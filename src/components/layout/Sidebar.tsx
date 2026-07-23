@@ -12,6 +12,7 @@ import {
 } from 'lucide-react'
 import { useIrisStore } from '@/store/useIrisStore'
 import { CURRENT_AGENT_NAME } from '@/lib/currentAgent'
+import IrisLogo from '@/components/shared/IrisLogo'
 import { cn } from '@/lib/utils'
 import {
   Tooltip,
@@ -48,8 +49,8 @@ export default function Sidebar() {
       {/* Header */}
       <div className="flex items-center justify-between px-3 h-14 shrink-0">
         <div className="flex items-center gap-2 overflow-hidden">
-          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-indigo-600 font-bold text-white">
-            I
+          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white">
+            <IrisLogo className="h-6 w-6" />
           </div>
           {isExpanded && (
             <span className="font-bold text-white whitespace-nowrap">IRIS</span>
