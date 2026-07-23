@@ -1,32 +1,48 @@
 import { useEffect, useState } from 'react'
-import { ArrowLeft, ExternalLink, Flag, CheckCircle2 } from 'lucide-react'
+import { ArrowLeft, ExternalLink, Flag, CheckCircle2, ChevronDown, Check, RefreshCw } from 'lucide-react'
 import { toast } from 'sonner'
 import { useIrisStore } from '@/store/useIrisStore'
-import type { Review } from '@/types/iris'
+import type { Priority } from '@/types/iris'
 import { PRIORITY_CONFIG } from '@/types/iris'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import BrandBadge from '@/components/shared/BrandBadge'
 import StarRating from '@/components/shared/StarRating'
 import StatusBadge from '@/components/shared/StatusBadge'
 import { platformLabel } from '@/components/shared/PlatformIcon'
-import { formatDate } from '@/lib/format'
+import { formatDate, formatDateTime } from '@/lib/format'
 import { highlightKeywords } from '@/lib/highlightKeywords'
+import { regenerateResponse } from '@/lib/regenerateResponse'
 import { cn } from '@/lib/utils'
+import RecategorizeDialog from './RecategorizeDialog'
+import RegenerateConfirmDialog from './RegenerateConfirmDialog'
+
+const ALL_PRIORITIES: Priority[] = ['critique', 'sensible', 'standard', 'simple', 'a-moderer']
 
 export default function ReviewDetailPanel() {
   const isOpen = useIrisStore((s) => s.isDetailPanelOpen)
   const selectedReview = useIrisStore((s) => s.selectedReview)
+  const reviews = useIrisStore((s) => s.reviews)
   const setDetailPanelOpen = useIrisStore((s) => s.setDetailPanelOpen)
   const updateReviewStatus = useIrisStore((s) => s.updateReviewStatus)
+  const recategorizePriority = useIrisStore((s) => s.recategorizePriority)
 
-  const [displayedReview, setDisplayedReview] = useState<Review | null>(null)
+  const [displayedReviewId, setDisplayedReviewId] = useState<string | null>(null)
   const [draftResponse, setDraftResponse] = useState('')
   const [isPublishing, setIsPublishing] = useState(false)
+  const [isRegenerating, setIsRegenerating] = useState(false)
+  const [pendingPriority, setPendingPriority] = useState<Priority | null>(null)
+  const [isRegenerateConfirmOpen, setIsRegenerateConfirmOpen] = useState(false)
 
   useEffect(() => {
     if (selectedReview) {
-      setDisplayedReview(selectedReview)
+      setDisplayedReviewId(selectedReview.id)
       setDraftResponse(selectedReview.aiResponse ?? '')
       setIsPublishing(false)
     }
@@ -34,13 +50,17 @@ export default function ReviewDetailPanel() {
 
   const handleClose = () => setDetailPanelOpen(false)
 
-  if (!displayedReview) return null
+  // Read the live review from the store (not a stale snapshot) so in-place
+  // edits like recategorization are reflected while the panel stays open.
+  const review = reviews.find((r) => r.id === displayedReviewId) ?? null
 
-  const review = displayedReview
+  if (!review) return null
+
   const config = PRIORITY_CONFIG[review.priority]
   const isCritique = review.priority === 'critique'
   const isReadOnly = review.status === 'valide-publie' || review.status === 'auto-publie'
   const wasModified = draftResponse !== (review.aiResponse ?? '')
+  const lastRecategorization = review.priorityChangeLog?.at(-1)
 
   const handlePublish = () => {
     setIsPublishing(true)
@@ -56,6 +76,15 @@ export default function ReviewDetailPanel() {
     updateReviewStatus(review.id, 'a-signaler')
     toast.success('Avis signalé')
     handleClose()
+  }
+
+  const handleRegenerate = () => {
+    setIsRegenerating(true)
+    setTimeout(() => {
+      setDraftResponse(regenerateResponse(review.aiResponse ?? draftResponse, review.language))
+      setIsRegenerating(false)
+      toast.success('Nouvelle suggestion générée')
+    }, 900)
   }
 
   return (
@@ -86,17 +115,35 @@ export default function ReviewDetailPanel() {
             Retour
           </button>
           <div className="flex items-center gap-2">
-            <span
-              className={cn(
-                'rounded-full px-2 py-0.5 text-xs font-semibold',
-                config.bgColor,
-                config.textColor,
-                'border',
-                config.borderColor
-              )}
-            >
-              {config.label}
-            </span>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  className={cn(
+                    'flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold border transition-colors hover:brightness-95',
+                    config.bgColor,
+                    config.textColor,
+                    config.borderColor
+                  )}
+                >
+                  {config.label}
+                  <ChevronDown className="h-3 w-3" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {ALL_PRIORITIES.map((p) => (
+                  <DropdownMenuItem
+                    key={p}
+                    onClick={() => {
+                      if (p !== review.priority) setPendingPriority(p)
+                    }}
+                  >
+                    <span className={cn('mr-2 h-2 w-2 shrink-0 rounded-full', PRIORITY_CONFIG[p].dotColor)} />
+                    {PRIORITY_CONFIG[p].label}
+                    {p === review.priority && <Check className="ml-auto h-3.5 w-3.5 text-indigo-600" />}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
             <StatusBadge status={review.status} />
           </div>
         </div>
@@ -107,11 +154,19 @@ export default function ReviewDetailPanel() {
             href={review.sourceUrl}
             target="_blank"
             rel="noreferrer"
-            className="mb-4 inline-flex items-center gap-1 text-sm font-medium text-indigo-600 hover:text-indigo-700"
+            className="mb-2 inline-flex items-center gap-1 text-sm font-medium text-indigo-600 hover:text-indigo-700"
           >
             Voir sur {platformLabel(review.platform)}
             <ExternalLink className="h-3.5 w-3.5" />
           </a>
+
+          {lastRecategorization && (
+            <p className="mb-3 text-xs text-gray-400">
+              Recatégorisé {PRIORITY_CONFIG[lastRecategorization.from].label} → {PRIORITY_CONFIG[lastRecategorization.to].label} le{' '}
+              {formatDateTime(lastRecategorization.at)} par {lastRecategorization.by}
+              {lastRecategorization.motif && <> — « {lastRecategorization.motif} »</>}
+            </p>
+          )}
 
           {/* Review info block */}
           <div className="mb-5">
@@ -181,16 +236,26 @@ export default function ReviewDetailPanel() {
           {/* AI response editor — available for every priority, including critique */}
           {!isReadOnly && (
             <div className="mb-5">
-              <div className="mb-2 flex items-center gap-2">
-                <h3 className="text-sm font-semibold text-gray-900">Réponse suggérée par Iris</h3>
-                <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-semibold text-indigo-700">
-                  IA
-                </span>
-                {isCritique && (
-                  <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700">
-                    Validation obligatoire
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h3 className="text-sm font-semibold text-gray-900">Réponse suggérée par Iris</h3>
+                  <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-semibold text-indigo-700">
+                    IA
                   </span>
-                )}
+                  {isCritique && (
+                    <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700">
+                      Validation obligatoire
+                    </span>
+                  )}
+                </div>
+                <button
+                  onClick={() => setIsRegenerateConfirmOpen(true)}
+                  disabled={isRegenerating}
+                  className="flex shrink-0 items-center gap-1 text-xs font-medium text-indigo-600 hover:text-indigo-700 disabled:opacity-50"
+                >
+                  <RefreshCw className={cn('h-3 w-3', isRegenerating && 'animate-spin')} />
+                  {isRegenerating ? 'Génération...' : 'Nouvelle suggestion'}
+                </button>
               </div>
 
               <div className="mb-2 flex flex-wrap gap-1.5">
@@ -255,6 +320,28 @@ export default function ReviewDetailPanel() {
           </div>
         )}
       </div>
+
+      {pendingPriority && (
+        <RecategorizeDialog
+          open={pendingPriority !== null}
+          fromPriority={review.priority}
+          toPriority={pendingPriority}
+          onOpenChange={(open) => {
+            if (!open) setPendingPriority(null)
+          }}
+          onConfirm={(motif) => {
+            recategorizePriority(review.id, pendingPriority, motif)
+            toast.success(`Priorité changée en ${PRIORITY_CONFIG[pendingPriority].label}`)
+            setPendingPriority(null)
+          }}
+        />
+      )}
+
+      <RegenerateConfirmDialog
+        open={isRegenerateConfirmOpen}
+        onOpenChange={setIsRegenerateConfirmOpen}
+        onConfirm={handleRegenerate}
+      />
     </>
   )
 }

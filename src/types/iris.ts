@@ -5,6 +5,14 @@ export type Priority = 'critique' | 'sensible' | 'standard' | 'simple' | 'a-mode
 export type Status = 'a-relire' | 'en-traitement' | 'valide-publie' |
                      'auto-publie' | 'escalade' | 'a-signaler'
 
+export interface PriorityChangeLogEntry {
+  at: string
+  by: string
+  from: Priority
+  to: Priority
+  motif?: string
+}
+
 export interface Review {
   id: string
   platform: Platform
@@ -22,6 +30,7 @@ export interface Review {
   modifiedByAgent: boolean
   tags: string[]
   sourceUrl: string
+  priorityChangeLog?: PriorityChangeLogEntry[]
 }
 
 export const PRIORITY_CONFIG: Record<Priority, {
