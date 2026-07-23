@@ -23,6 +23,7 @@ export interface Review {
   platform: Platform
   brand: Brand
   siteName: string
+  authorName: string
   rating: number
   reviewText: string
   reviewDate: string

@@ -162,6 +162,8 @@ export default function ReviewDetailPanel() {
               <BrandBadge brand={review.brand} />
             </div>
             <div className="mb-3 flex items-center gap-2 text-xs text-gray-500">
+              <span className="font-medium text-gray-700">{review.authorName}</span>
+              <span>·</span>
               <StarRating rating={review.rating} />
               <span>·</span>
               <span>{formatDate(review.reviewDate)}</span>
