@@ -1,10 +1,12 @@
 import type { Platform } from '@/types/iris'
 import { cn } from '@/lib/utils'
 
-const PLATFORM_CONFIG: Record<Platform, { letter: string; bg: string; label: string }> = {
+export const PLATFORM_CONFIG: Record<Platform, { letter: string; bg: string; label: string }> = {
   google: { letter: 'G', bg: 'bg-blue-500', label: 'Google' },
   tripadvisor: { letter: 'T', bg: 'bg-green-500', label: 'TripAdvisor' },
   booking: { letter: 'B', bg: 'bg-blue-700', label: 'Booking' },
+  trustpilot: { letter: 'TP', bg: 'bg-teal-600', label: 'Trustpilot' },
+  holidaycheck: { letter: 'HC', bg: 'bg-orange-500', label: 'HolidayCheck' },
 }
 
 export function platformLabel(platform: Platform): string {
