@@ -13,6 +13,8 @@ export default function FeedPage() {
   const reviews = useIrisStore((s) => s.reviews)
   const activeLanguage = useIrisStore((s) => s.activeLanguage)
   const clearSelection = useIrisStore((s) => s.clearSelection)
+  const activeBrandFilters = useIrisStore((s) => s.activeBrandFilters)
+  const activePlatformFilters = useIrisStore((s) => s.activePlatformFilters)
   const location = useLocation()
 
   const scope = location.pathname.endsWith('/signales')
@@ -28,11 +30,13 @@ export default function FeedPage() {
   const scopedReviews = useMemo(() => {
     return reviews.filter((r) => {
       if (activeLanguage !== 'ALL' && r.language !== activeLanguage) return false
+      if (activeBrandFilters.size > 0 && !activeBrandFilters.has(r.brand)) return false
+      if (activePlatformFilters.size > 0 && !activePlatformFilters.has(r.platform)) return false
       if (scope === 'signales') return r.status === 'a-signaler'
       if (scope === 'archive') return r.status === 'valide-publie' || r.status === 'auto-publie'
       return r.status !== 'a-signaler'
     })
-  }, [reviews, activeLanguage, scope])
+  }, [reviews, activeLanguage, activeBrandFilters, activePlatformFilters, scope])
 
   const reviewsByPriority = useMemo(() => {
     const map: Record<Priority, typeof reviews> = {

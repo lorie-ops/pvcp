@@ -1,5 +1,10 @@
-export type Platform = 'google' | 'tripadvisor' | 'booking'
+export type Platform = 'google' | 'tripadvisor' | 'booking' | 'trustpilot' | 'holidaycheck'
 export type Brand = 'PV' | 'CP'
+
+export const BRAND_LABELS: Record<Brand, string> = {
+  PV: 'Pierre & Vacances',
+  CP: 'Center Parcs',
+}
 export type Language = 'FR' | 'EN' | 'DE' | 'NL' | 'OTHER'
 export type Priority = 'critique' | 'sensible' | 'standard' | 'simple' | 'a-moderer'
 export type Status = 'a-relire' | 'en-traitement' | 'valide-publie' |

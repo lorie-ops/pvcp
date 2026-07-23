@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { Priority, Review, Language, Status } from '../types/iris'
+import type { Brand, Platform, Priority, Review, Language, Status } from '../types/iris'
 import { MOCK_REVIEWS } from '../data/mockReviews'
 import { CURRENT_AGENT_NAME } from '../lib/currentAgent'
 
@@ -11,6 +11,8 @@ interface IrisStore {
   isSidebarExpanded: boolean
   collapsedPriorities: Set<string>
   selectedIds: Set<string>
+  activeBrandFilters: Set<Brand>
+  activePlatformFilters: Set<Platform>
 
   setSelectedReview: (review: Review | null) => void
   setActiveLanguage: (lang: Language | 'ALL') => void
@@ -23,6 +25,9 @@ interface IrisStore {
   clearSelection: () => void
   bulkValidateAndPublish: (ids: string[]) => void
   recategorizePriority: (id: string, newPriority: Priority, motif?: string) => void
+  toggleBrandFilter: (brand: Brand) => void
+  togglePlatformFilter: (platform: Platform) => void
+  clearFilters: () => void
 }
 
 export const useIrisStore = create<IrisStore>((set) => ({
@@ -33,6 +38,8 @@ export const useIrisStore = create<IrisStore>((set) => ({
   isSidebarExpanded: true,
   collapsedPriorities: new Set(['simple']), // simple collapsed by default
   selectedIds: new Set(),
+  activeBrandFilters: new Set(),
+  activePlatformFilters: new Set(),
 
   setSelectedReview: (review) => set({
     selectedReview: review,
@@ -105,4 +112,17 @@ export const useIrisStore = create<IrisStore>((set) => ({
       }
     }),
   })),
+  toggleBrandFilter: (brand) => set((s) => {
+    const next = new Set(s.activeBrandFilters)
+    if (next.has(brand)) next.delete(brand)
+    else next.add(brand)
+    return { activeBrandFilters: next }
+  }),
+  togglePlatformFilter: (platform) => set((s) => {
+    const next = new Set(s.activePlatformFilters)
+    if (next.has(platform)) next.delete(platform)
+    else next.add(platform)
+    return { activePlatformFilters: next }
+  }),
+  clearFilters: () => set({ activeBrandFilters: new Set(), activePlatformFilters: new Set() }),
 }))
