@@ -5,6 +5,14 @@ export type Priority = 'critique' | 'sensible' | 'standard' | 'simple' | 'a-mode
 export type Status = 'a-relire' | 'en-traitement' | 'valide-publie' |
                      'auto-publie' | 'escalade' | 'a-signaler'
 
+export interface PriorityChangeLogEntry {
+  at: string
+  by: string
+  from: Priority
+  to: Priority
+  motif?: string
+}
+
 export interface Review {
   id: string
   platform: Platform
@@ -22,6 +30,7 @@ export interface Review {
   modifiedByAgent: boolean
   tags: string[]
   sourceUrl: string
+  priorityChangeLog?: PriorityChangeLogEntry[]
 }
 
 export const PRIORITY_CONFIG: Record<Priority, {
@@ -44,7 +53,7 @@ export const PRIORITY_CONFIG: Record<Priority, {
     borderColor: 'border-red-300',
     textColor: 'text-red-700',
     dotColor: 'bg-red-500',
-    description: 'Traitement humain obligatoire · aucune réponse automatique',
+    description: 'Réponse IA proposée · validation humaine obligatoire · pas d\'auto-publication',
     canAutoPublish: false,
     iconBgColor: 'bg-red-100',
     iconTextColor: 'text-red-600',

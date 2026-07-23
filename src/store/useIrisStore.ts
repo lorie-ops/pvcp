@@ -1,6 +1,7 @@
 import { create } from 'zustand'
-import type { Review, Language, Status } from '../types/iris'
+import type { Priority, Review, Language, Status } from '../types/iris'
 import { MOCK_REVIEWS } from '../data/mockReviews'
+import { CURRENT_AGENT_NAME } from '../lib/currentAgent'
 
 interface IrisStore {
   reviews: Review[]
@@ -21,6 +22,7 @@ interface IrisStore {
   setIdsSelected: (ids: string[], selected: boolean) => void
   clearSelection: () => void
   bulkValidateAndPublish: (ids: string[]) => void
+  recategorizePriority: (id: string, newPriority: Priority, motif?: string) => void
 }
 
 export const useIrisStore = create<IrisStore>((set) => ({
@@ -86,4 +88,21 @@ export const useIrisStore = create<IrisStore>((set) => ({
       selectedIds: new Set(),
     }
   }),
+  recategorizePriority: (id, newPriority, motif) => set((s) => ({
+    reviews: s.reviews.map((r) => {
+      if (r.id !== id || r.priority === newPriority) return r
+      const logEntry = {
+        at: new Date().toISOString(),
+        by: CURRENT_AGENT_NAME,
+        from: r.priority,
+        to: newPriority,
+        motif: motif?.trim() || undefined,
+      }
+      return {
+        ...r,
+        priority: newPriority,
+        priorityChangeLog: [...(r.priorityChangeLog ?? []), logEntry],
+      }
+    }),
+  })),
 }))
