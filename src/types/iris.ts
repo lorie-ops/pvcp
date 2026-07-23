@@ -41,7 +41,7 @@ export const PRIORITY_CONFIG: Record<Priority, {
     borderColor: 'border-red-300',
     textColor: 'text-red-700',
     dotColor: 'bg-red-500',
-    description: 'Traitement humain obligatoire · aucune réponse automatique',
+    description: 'Réponse IA proposée · validation humaine obligatoire · pas d\'auto-publication',
     canAutoPublish: false,
   },
   sensible: {

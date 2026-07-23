@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { ArrowLeft, ExternalLink, AlertTriangle, Flag, CheckCircle2 } from 'lucide-react'
+import { ArrowLeft, ExternalLink, Flag, CheckCircle2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useIrisStore } from '@/store/useIrisStore'
 import type { Review } from '@/types/iris'
@@ -13,7 +13,6 @@ import { platformLabel } from '@/components/shared/PlatformIcon'
 import { formatDate } from '@/lib/format'
 import { highlightKeywords } from '@/lib/highlightKeywords'
 import { cn } from '@/lib/utils'
-import EscalationDialog from './EscalationDialog'
 
 export default function ReviewDetailPanel() {
   const isOpen = useIrisStore((s) => s.isDetailPanelOpen)
@@ -24,7 +23,6 @@ export default function ReviewDetailPanel() {
   const [displayedReview, setDisplayedReview] = useState<Review | null>(null)
   const [draftResponse, setDraftResponse] = useState('')
   const [isPublishing, setIsPublishing] = useState(false)
-  const [isEscalationOpen, setIsEscalationOpen] = useState(false)
 
   useEffect(() => {
     if (selectedReview) {
@@ -52,10 +50,6 @@ export default function ReviewDetailPanel() {
       setIsPublishing(false)
       handleClose()
     }, 2000)
-  }
-
-  const handleEscalate = () => {
-    updateReviewStatus(review.id, 'escalade')
   }
 
   const handleFlag = () => {
@@ -184,24 +178,19 @@ export default function ReviewDetailPanel() {
             </div>
           )}
 
-          {/* Critique lockout */}
-          {isCritique && !isReadOnly && (
-            <div className="mb-5 rounded-md border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700">
-              <div className="flex items-start gap-2">
-                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-                <span>Aucune réponse automatique autorisée pour ce niveau de priorité</span>
-              </div>
-            </div>
-          )}
-
-          {/* AI response editor */}
-          {!isCritique && !isReadOnly && (
+          {/* AI response editor — available for every priority, including critique */}
+          {!isReadOnly && (
             <div className="mb-5">
               <div className="mb-2 flex items-center gap-2">
                 <h3 className="text-sm font-semibold text-gray-900">Réponse suggérée par Iris</h3>
                 <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-semibold text-indigo-700">
                   IA
                 </span>
+                {isCritique && (
+                  <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700">
+                    Validation obligatoire
+                  </span>
+                )}
               </div>
 
               <div className="mb-2 flex flex-wrap gap-1.5">
@@ -234,41 +223,21 @@ export default function ReviewDetailPanel() {
         {/* Footer actions */}
         {!isReadOnly && (
           <div className="shrink-0 space-y-2 border-t border-gray-200 px-5 py-4">
-            {isCritique ? (
-              <>
-                <Button
-                  variant="destructive"
-                  className="w-full"
-                  onClick={() => setIsEscalationOpen(true)}
-                >
-                  ↗ Escalader à Vanessa Klein
-                </Button>
-                <Button variant="outline" className="w-full" onClick={handleFlag}>
-                  <Flag className="h-3.5 w-3.5" />
-                  Signaler l'avis
-                </Button>
-              </>
-            ) : (
-              <>
-                <Button className="w-full" disabled={isPublishing} onClick={handlePublish}>
-                  {isPublishing ? 'Publication en cours...' : '✓ Valider & Publier'}
-                </Button>
-                <Button
-                  variant="outlineDestructive"
-                  className="w-full"
-                  onClick={() => setIsEscalationOpen(true)}
-                >
-                  Escalader
-                </Button>
-                <button
-                  onClick={handleFlag}
-                  className="flex w-full items-center justify-center gap-1.5 py-1 text-sm text-gray-500 hover:text-gray-700"
-                >
-                  <Flag className="h-3.5 w-3.5" />
-                  À signaler
-                </button>
-              </>
-            )}
+            <Button
+              className="w-full"
+              variant={isCritique ? 'destructive' : 'default'}
+              disabled={isPublishing}
+              onClick={handlePublish}
+            >
+              {isPublishing ? 'Publication en cours...' : '✓ Valider & Publier'}
+            </Button>
+            <button
+              onClick={handleFlag}
+              className="flex w-full items-center justify-center gap-1.5 py-1 text-sm text-gray-500 hover:text-gray-700"
+            >
+              <Flag className="h-3.5 w-3.5" />
+              À signaler
+            </button>
           </div>
         )}
 
@@ -286,15 +255,6 @@ export default function ReviewDetailPanel() {
           </div>
         )}
       </div>
-
-      <EscalationDialog
-        open={isEscalationOpen}
-        onOpenChange={setIsEscalationOpen}
-        onConfirm={() => {
-          handleEscalate()
-          handleClose()
-        }}
-      />
     </>
   )
 }
