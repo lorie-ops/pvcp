@@ -54,7 +54,7 @@ export default function FiltersDropdown() {
                   type="checkbox"
                   checked={activeBrandFilters.has(brand)}
                   onChange={() => toggleBrandFilter(brand)}
-                  className="h-4 w-4 accent-indigo-600"
+                  className="iris-checkbox"
                 />
                 {BRAND_LABELS[brand]}
               </label>
@@ -74,7 +74,7 @@ export default function FiltersDropdown() {
                   type="checkbox"
                   checked={activePlatformFilters.has(platform)}
                   onChange={() => togglePlatformFilter(platform)}
-                  className="h-4 w-4 accent-indigo-600"
+                  className="iris-checkbox"
                 />
                 <span className={cn('h-2.5 w-2.5 shrink-0 rounded-full', PLATFORM_CONFIG[platform].bg)} />
                 {PLATFORM_CONFIG[platform].label}
