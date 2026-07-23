@@ -1,16 +1,18 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useLocation } from 'react-router-dom'
 import { Inbox } from 'lucide-react'
 import { useIrisStore } from '@/store/useIrisStore'
 import type { Priority } from '@/types/iris'
 import PriorityCounters from '@/components/feed/PriorityCounters'
 import PrioritySection from '@/components/feed/PrioritySection'
+import BulkActionBar from '@/components/feed/BulkActionBar'
 
 const SECTION_ORDER: Priority[] = ['critique', 'sensible', 'standard', 'simple']
 
 export default function FeedPage() {
   const reviews = useIrisStore((s) => s.reviews)
   const activeLanguage = useIrisStore((s) => s.activeLanguage)
+  const clearSelection = useIrisStore((s) => s.clearSelection)
   const location = useLocation()
 
   const scope = location.pathname.endsWith('/signales')
@@ -18,6 +20,10 @@ export default function FeedPage() {
     : location.pathname.endsWith('/archive')
       ? 'archive'
       : 'queue'
+
+  useEffect(() => {
+    clearSelection()
+  }, [activeLanguage, scope, clearSelection])
 
   const scopedReviews = useMemo(() => {
     return reviews.filter((r) => {
@@ -64,6 +70,8 @@ export default function FeedPage() {
           <PrioritySection key={priority} priority={priority} reviews={reviewsByPriority[priority]} />
         ))
       )}
+
+      <BulkActionBar />
     </div>
   )
 }

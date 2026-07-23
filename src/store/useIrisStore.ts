@@ -9,6 +9,7 @@ interface IrisStore {
   isDetailPanelOpen: boolean
   isSidebarExpanded: boolean
   collapsedPriorities: Set<string>
+  selectedIds: Set<string>
 
   setSelectedReview: (review: Review | null) => void
   setActiveLanguage: (lang: Language | 'ALL') => void
@@ -16,6 +17,10 @@ interface IrisStore {
   toggleSidebar: () => void
   togglePrioritySection: (priority: string) => void
   updateReviewStatus: (id: string, status: Status, response?: string) => void
+  toggleIdSelection: (id: string) => void
+  setIdsSelected: (ids: string[], selected: boolean) => void
+  clearSelection: () => void
+  bulkValidateAndPublish: (ids: string[]) => void
 }
 
 export const useIrisStore = create<IrisStore>((set) => ({
@@ -25,6 +30,7 @@ export const useIrisStore = create<IrisStore>((set) => ({
   isDetailPanelOpen: false,
   isSidebarExpanded: true,
   collapsedPriorities: new Set(['simple']), // simple collapsed by default
+  selectedIds: new Set(),
 
   setSelectedReview: (review) => set({
     selectedReview: review,
@@ -54,4 +60,30 @@ export const useIrisStore = create<IrisStore>((set) => ({
         : r
     ),
   })),
+  toggleIdSelection: (id) => set((s) => {
+    const next = new Set(s.selectedIds)
+    if (next.has(id)) next.delete(id)
+    else next.add(id)
+    return { selectedIds: next }
+  }),
+  setIdsSelected: (ids, selected) => set((s) => {
+    const next = new Set(s.selectedIds)
+    for (const id of ids) {
+      if (selected) next.add(id)
+      else next.delete(id)
+    }
+    return { selectedIds: next }
+  }),
+  clearSelection: () => set({ selectedIds: new Set() }),
+  bulkValidateAndPublish: (ids) => set((s) => {
+    const idSet = new Set(ids)
+    return {
+      reviews: s.reviews.map((r) =>
+        idSet.has(r.id) && r.aiResponse
+          ? { ...r, status: 'valide-publie' as const, publishedResponse: r.aiResponse }
+          : r
+      ),
+      selectedIds: new Set(),
+    }
+  }),
 }))
