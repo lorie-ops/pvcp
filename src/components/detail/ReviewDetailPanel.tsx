@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { ArrowLeft, ExternalLink, Flag, CheckCircle2, ChevronDown, Check } from 'lucide-react'
+import { ArrowLeft, Flag, CheckCircle2, ChevronDown, Check } from 'lucide-react'
 import { toast } from 'sonner'
 import { useIrisStore } from '@/store/useIrisStore'
 import type { Priority } from '@/types/iris'
@@ -137,16 +137,6 @@ export default function ReviewDetailPanel() {
 
         {/* Body */}
         <div className="flex-1 overflow-y-auto px-5 py-4">
-          <a
-            href={review.sourceUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="mb-2 inline-flex items-center gap-1 text-sm font-medium text-indigo-600 hover:text-indigo-700"
-          >
-            Voir sur {platformLabel(review.platform)}
-            <ExternalLink className="h-3.5 w-3.5" />
-          </a>
-
           {lastRecategorization && (
             <p className="mb-3 text-xs text-gray-400">
               Recatégorisé {PRIORITY_CONFIG[lastRecategorization.from].label} → {PRIORITY_CONFIG[lastRecategorization.to].label} le{' '}
@@ -258,20 +248,6 @@ export default function ReviewDetailPanel() {
               <Flag className="h-3.5 w-3.5" />
               À signaler
             </button>
-          </div>
-        )}
-
-        {isReadOnly && (
-          <div className="shrink-0 border-t border-gray-200 px-5 py-4">
-            <a
-              href={review.sourceUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="flex w-full items-center justify-center gap-1.5 rounded-md border border-gray-300 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-            >
-              Voir sur {platformLabel(review.platform)}
-              <ExternalLink className="h-3.5 w-3.5" />
-            </a>
           </div>
         )}
       </div>
