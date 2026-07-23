@@ -16,3 +16,14 @@ export function formatDate(isoDate: string): string {
   const d = new Date(isoDate)
   return d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' })
 }
+
+export function formatDateTime(isoDate: string): string {
+  const d = new Date(isoDate)
+  return d.toLocaleString('fr-FR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}

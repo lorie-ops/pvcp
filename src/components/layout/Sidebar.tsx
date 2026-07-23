@@ -11,6 +11,7 @@ import {
   Lock,
 } from 'lucide-react'
 import { useIrisStore } from '@/store/useIrisStore'
+import { CURRENT_AGENT_NAME } from '@/lib/currentAgent'
 import { cn } from '@/lib/utils'
 import {
   Tooltip,
@@ -161,7 +162,7 @@ export default function Sidebar() {
               {isExpanded && (
                 <div className="flex-1 overflow-hidden text-left">
                   <div className="truncate text-sm font-medium text-white">
-                    Kensy Bellune
+                    {CURRENT_AGENT_NAME}
                   </div>
                   <div className="truncate text-xs text-slate-400">
                     Agent · FR, EN
