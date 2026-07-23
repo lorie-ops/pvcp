@@ -29,10 +29,7 @@ export default function IndeterminateCheckbox({
       checked={checked}
       onChange={onChange}
       onClick={(e) => e.stopPropagation()}
-      className={cn(
-        'h-4 w-4 cursor-pointer rounded border-gray-300 text-indigo-600 focus:ring-indigo-500',
-        className
-      )}
+      className={cn('iris-checkbox', className)}
       {...rest}
     />
   )

@@ -1,17 +1,9 @@
-import { Clock, AlertTriangle, Target, CheckCircle2 } from 'lucide-react'
 import type { Priority, Review } from '@/types/iris'
 import { PRIORITY_CONFIG } from '@/types/iris'
+import { PRIORITY_ICONS } from '@/lib/priorityIcons'
 import { cn } from '@/lib/utils'
 
 const COUNTER_ORDER: Priority[] = ['critique', 'sensible', 'standard', 'simple']
-
-const ICONS: Record<Priority, typeof Clock> = {
-  critique: Clock,
-  sensible: AlertTriangle,
-  standard: Target,
-  simple: CheckCircle2,
-  'a-moderer': AlertTriangle,
-}
 
 export default function PriorityCounters({ reviews }: { reviews: Review[] }) {
   const counts = reviews.reduce<Record<string, number>>((acc, r) => {
@@ -30,7 +22,7 @@ export default function PriorityCounters({ reviews }: { reviews: Review[] }) {
     <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
       {COUNTER_ORDER.map((priority) => {
         const config = PRIORITY_CONFIG[priority]
-        const Icon = ICONS[priority]
+        const Icon = PRIORITY_ICONS[priority]
         const count = counts[priority] || 0
         return (
           <button
