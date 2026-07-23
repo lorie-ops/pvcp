@@ -33,6 +33,9 @@ export const PRIORITY_CONFIG: Record<Priority, {
   dotColor: string
   description: string
   canAutoPublish: boolean
+  iconBgColor: string
+  iconTextColor: string
+  hoverBgColor: string
 }> = {
   critique: {
     label: 'Critique',
@@ -43,6 +46,9 @@ export const PRIORITY_CONFIG: Record<Priority, {
     dotColor: 'bg-red-500',
     description: 'Traitement humain obligatoire · aucune réponse automatique',
     canAutoPublish: false,
+    iconBgColor: 'bg-red-100',
+    iconTextColor: 'text-red-600',
+    hoverBgColor: 'hover:bg-red-100',
   },
   sensible: {
     label: 'Sensible',
@@ -53,6 +59,9 @@ export const PRIORITY_CONFIG: Record<Priority, {
     dotColor: 'bg-orange-500',
     description: 'Validation humaine requise · réponse IA proposée',
     canAutoPublish: false,
+    iconBgColor: 'bg-orange-100',
+    iconTextColor: 'text-orange-600',
+    hoverBgColor: 'hover:bg-orange-100',
   },
   standard: {
     label: 'Standard',
@@ -63,6 +72,9 @@ export const PRIORITY_CONFIG: Record<Priority, {
     dotColor: 'bg-amber-500',
     description: 'Réponse IA à valider et publier',
     canAutoPublish: false,
+    iconBgColor: 'bg-amber-100',
+    iconTextColor: 'text-amber-600',
+    hoverBgColor: 'hover:bg-amber-100',
   },
   simple: {
     label: 'Simple',
@@ -73,6 +85,9 @@ export const PRIORITY_CONFIG: Record<Priority, {
     dotColor: 'bg-emerald-500',
     description: 'Auto-publiés · consultables en lecture seule',
     canAutoPublish: true,
+    iconBgColor: 'bg-emerald-100',
+    iconTextColor: 'text-emerald-600',
+    hoverBgColor: 'hover:bg-emerald-100',
   },
   'a-moderer': {
     label: 'À modérer',
@@ -83,5 +98,8 @@ export const PRIORITY_CONFIG: Record<Priority, {
     dotColor: 'bg-gray-400',
     description: 'Signalement recommandé sur la plateforme',
     canAutoPublish: false,
+    iconBgColor: 'bg-gray-100',
+    iconTextColor: 'text-gray-600',
+    hoverBgColor: 'hover:bg-gray-100',
   },
 }

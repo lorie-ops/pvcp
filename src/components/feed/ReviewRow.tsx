@@ -7,19 +7,38 @@ import PlatformIcon from '@/components/shared/PlatformIcon'
 import BrandBadge from '@/components/shared/BrandBadge'
 import StarRating from '@/components/shared/StarRating'
 import StatusBadge from '@/components/shared/StatusBadge'
+import IndeterminateCheckbox from '@/components/shared/IndeterminateCheckbox'
 import { timeAgo } from '@/lib/format'
+import { isBulkEligible } from '@/lib/bulkEligibility'
 import { cn } from '@/lib/utils'
 
 export default function ReviewRow({ review }: { review: Review }) {
   const setSelectedReview = useIrisStore((s) => s.setSelectedReview)
+  const isSelected = useIrisStore((s) => s.selectedIds.has(review.id))
+  const toggleIdSelection = useIrisStore((s) => s.toggleIdSelection)
   const config = PRIORITY_CONFIG[review.priority]
   const isActionable = review.status === 'a-relire' || review.status === 'en-traitement'
   const isPublished = review.status === 'valide-publie' || review.status === 'auto-publie'
+  const eligible = isBulkEligible(review)
 
   return (
-    <div className="flex min-w-0 items-stretch border-b border-gray-100 transition-colors hover:bg-gray-50">
+    <div
+      className={cn(
+        'flex min-w-0 items-stretch border-b border-gray-100 transition-colors hover:bg-gray-50',
+        isSelected && 'bg-indigo-50/60 hover:bg-indigo-50'
+      )}
+    >
       <div className={cn('w-[3px] shrink-0', config.dotColor)} />
       <div className="flex min-w-0 flex-1 items-center gap-3 px-4 py-3">
+        <div className="flex w-5 shrink-0 items-center justify-center">
+          {eligible && (
+            <IndeterminateCheckbox
+              checked={isSelected}
+              onChange={() => toggleIdSelection(review.id)}
+              aria-label={`Sélectionner l'avis de ${review.siteName}`}
+            />
+          )}
+        </div>
         <PlatformIcon platform={review.platform} />
         <BrandBadge brand={review.brand} />
         <span className="w-32 shrink-0 truncate text-sm font-semibold text-gray-900 xl:w-40">
