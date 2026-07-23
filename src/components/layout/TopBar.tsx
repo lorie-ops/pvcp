@@ -1,9 +1,10 @@
 import { useMemo } from 'react'
-import { Search, Filter, Bell } from 'lucide-react'
+import { Search, Bell } from 'lucide-react'
 import { useIrisStore } from '@/store/useIrisStore'
 import type { Language } from '@/types/iris'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
+import FiltersDropdown from './FiltersDropdown'
 
 const LANGUAGE_TABS: { key: Language; label: string }[] = [
   { key: 'FR', label: 'FR' },
@@ -84,13 +85,7 @@ export default function TopBar() {
           />
         </div>
 
-        <button
-          onClick={() => toast('Filtres — à venir')}
-          className="flex h-8 items-center gap-1.5 rounded-md border border-gray-300 px-3 text-sm text-gray-600 hover:bg-gray-50"
-        >
-          <Filter className="h-3.5 w-3.5" />
-          Filtres
-        </button>
+        <FiltersDropdown />
 
         <button
           onClick={() => toast(`${criticalUnseenCount} avis critiques à traiter`)}
