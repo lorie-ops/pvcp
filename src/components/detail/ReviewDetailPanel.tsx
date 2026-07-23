@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { ArrowLeft, ExternalLink, Flag, CheckCircle2, ChevronDown, Check, RefreshCw } from 'lucide-react'
+import { ArrowLeft, ExternalLink, Flag, CheckCircle2, ChevronDown, Check } from 'lucide-react'
 import { toast } from 'sonner'
 import { useIrisStore } from '@/store/useIrisStore'
 import type { Priority } from '@/types/iris'
@@ -18,11 +18,8 @@ import StatusBadge from '@/components/shared/StatusBadge'
 import ExpandableText from '@/components/shared/ExpandableText'
 import { platformLabel } from '@/components/shared/PlatformIcon'
 import { formatDate, formatDateTime } from '@/lib/format'
-import { highlightKeywords } from '@/lib/highlightKeywords'
-import { regenerateResponse } from '@/lib/regenerateResponse'
 import { cn } from '@/lib/utils'
 import RecategorizeDialog from './RecategorizeDialog'
-import RegenerateConfirmDialog from './RegenerateConfirmDialog'
 
 const ALL_PRIORITIES: Priority[] = ['critique', 'sensible', 'standard', 'simple', 'a-moderer']
 
@@ -37,9 +34,7 @@ export default function ReviewDetailPanel() {
   const [displayedReviewId, setDisplayedReviewId] = useState<string | null>(null)
   const [draftResponse, setDraftResponse] = useState('')
   const [isPublishing, setIsPublishing] = useState(false)
-  const [isRegenerating, setIsRegenerating] = useState(false)
   const [pendingPriority, setPendingPriority] = useState<Priority | null>(null)
-  const [isRegenerateConfirmOpen, setIsRegenerateConfirmOpen] = useState(false)
 
   useEffect(() => {
     if (selectedReview) {
@@ -77,15 +72,6 @@ export default function ReviewDetailPanel() {
     updateReviewStatus(review.id, 'a-signaler')
     toast.success('Avis signalé')
     handleClose()
-  }
-
-  const handleRegenerate = () => {
-    setIsRegenerating(true)
-    setTimeout(() => {
-      setDraftResponse(regenerateResponse(review.aiResponse ?? draftResponse, review.language))
-      setIsRegenerating(false)
-      toast.success('Nouvelle suggestion générée')
-    }, 900)
   }
 
   return (
@@ -199,19 +185,7 @@ export default function ReviewDetailPanel() {
             <blockquote
               className={cn('rounded-r-md border-l-4 bg-gray-50 px-3 py-2.5 text-sm italic text-gray-700', config.borderColor)}
             >
-              <ExpandableText>
-                {isCritique
-                  ? highlightKeywords(review.reviewText).map((part) =>
-                      typeof part === 'string' ? (
-                        part
-                      ) : (
-                        <mark key={part.key} className="rounded bg-red-100 px-0.5 font-semibold not-italic text-red-700">
-                          {part.text}
-                        </mark>
-                      )
-                    )
-                  : review.reviewText}
-              </ExpandableText>
+              <ExpandableText>{review.reviewText}</ExpandableText>
             </blockquote>
           </div>
 
@@ -239,26 +213,11 @@ export default function ReviewDetailPanel() {
           {/* AI response editor — available for every priority, including critique */}
           {!isReadOnly && (
             <div className="mb-5">
-              <div className="mb-2 flex items-center justify-between gap-2">
-                <div className="flex flex-wrap items-center gap-2">
-                  <h3 className="text-sm font-semibold text-gray-900">Réponse suggérée par Iris</h3>
-                  <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-semibold text-indigo-700">
-                    IA
-                  </span>
-                  {isCritique && (
-                    <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700">
-                      Validation obligatoire
-                    </span>
-                  )}
-                </div>
-                <button
-                  onClick={() => setIsRegenerateConfirmOpen(true)}
-                  disabled={isRegenerating}
-                  className="flex shrink-0 items-center gap-1 text-xs font-medium text-indigo-600 hover:text-indigo-700 disabled:opacity-50"
-                >
-                  <RefreshCw className={cn('h-3 w-3', isRegenerating && 'animate-spin')} />
-                  {isRegenerating ? 'Génération...' : 'Nouvelle suggestion'}
-                </button>
+              <div className="mb-2 flex items-center gap-2">
+                <h3 className="text-sm font-semibold text-gray-900">Réponse suggérée par Iris</h3>
+                <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-semibold text-indigo-700">
+                  IA
+                </span>
               </div>
 
               <Textarea
@@ -330,12 +289,6 @@ export default function ReviewDetailPanel() {
           }}
         />
       )}
-
-      <RegenerateConfirmDialog
-        open={isRegenerateConfirmOpen}
-        onOpenChange={setIsRegenerateConfirmOpen}
-        onConfirm={handleRegenerate}
-      />
     </>
   )
 }
