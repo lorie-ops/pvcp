@@ -15,6 +15,7 @@ import {
 import BrandBadge from '@/components/shared/BrandBadge'
 import StarRating from '@/components/shared/StarRating'
 import StatusBadge from '@/components/shared/StatusBadge'
+import ExpandableText from '@/components/shared/ExpandableText'
 import { platformLabel } from '@/components/shared/PlatformIcon'
 import { formatDate, formatDateTime } from '@/lib/format'
 import { highlightKeywords } from '@/lib/highlightKeywords'
@@ -198,17 +199,19 @@ export default function ReviewDetailPanel() {
             <blockquote
               className={cn('rounded-r-md border-l-4 bg-gray-50 px-3 py-2.5 text-sm italic text-gray-700', config.borderColor)}
             >
-              {isCritique
-                ? highlightKeywords(review.reviewText).map((part) =>
-                    typeof part === 'string' ? (
-                      part
-                    ) : (
-                      <mark key={part.key} className="rounded bg-red-100 px-0.5 font-semibold not-italic text-red-700">
-                        {part.text}
-                      </mark>
+              <ExpandableText>
+                {isCritique
+                  ? highlightKeywords(review.reviewText).map((part) =>
+                      typeof part === 'string' ? (
+                        part
+                      ) : (
+                        <mark key={part.key} className="rounded bg-red-100 px-0.5 font-semibold not-italic text-red-700">
+                          {part.text}
+                        </mark>
+                      )
                     )
-                  )
-                : review.reviewText}
+                  : review.reviewText}
+              </ExpandableText>
             </blockquote>
           </div>
 
@@ -256,15 +259,6 @@ export default function ReviewDetailPanel() {
                   <RefreshCw className={cn('h-3 w-3', isRegenerating && 'animate-spin')} />
                   {isRegenerating ? 'Génération...' : 'Nouvelle suggestion'}
                 </button>
-              </div>
-
-              <div className="mb-2 flex flex-wrap gap-1.5">
-                <span className="rounded-full border border-gray-200 px-2 py-0.5 text-xs text-gray-500">
-                  FAQ PVCP
-                </span>
-                <span className="rounded-full border border-gray-200 px-2 py-0.5 text-xs text-gray-500">
-                  Fiche parc {review.siteName}
-                </span>
               </div>
 
               <Textarea
