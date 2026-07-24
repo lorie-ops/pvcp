@@ -140,6 +140,34 @@ export default function ReviewDetailPanel() {
               </DropdownMenuContent>
             </DropdownMenu>
             <StatusBadge status={review.status} />
+            {!isReadOnly && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    className={cn(
+                      'flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-semibold transition-colors hover:brightness-95',
+                      review.assignedGroup
+                        ? 'border-indigo-300 bg-indigo-50 text-indigo-700'
+                        : 'border-gray-300 bg-white text-gray-600'
+                    )}
+                  >
+                    <Users className="h-3 w-3" />
+                    {review.assignedGroup ? LANGUAGE_GROUP_LABELS[review.assignedGroup] : 'Assigner'}
+                    <ChevronDown className="h-3 w-3" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  {LANGUAGE_GROUPS.map((group) => (
+                    <DropdownMenuItem key={group} onClick={() => handleAssignToGroup(group)}>
+                      <span>{LANGUAGE_GROUP_LABELS[group]}</span>
+                      {review.assignedGroup === group && (
+                        <Check className="ml-auto h-3.5 w-3.5 text-indigo-600" />
+                      )}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </div>
         </div>
 
@@ -259,25 +287,6 @@ export default function ReviewDetailPanel() {
             >
               {isPublishing ? 'Publication en cours...' : '✓ Valider & Publier'}
             </Button>
-
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="w-full">
-                  <Users className="h-3.5 w-3.5" />
-                  Assigner à un groupe
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="center" className="w-[var(--radix-dropdown-menu-trigger-width)]">
-                {LANGUAGE_GROUPS.map((group) => (
-                  <DropdownMenuItem key={group} onClick={() => handleAssignToGroup(group)}>
-                    <span>{LANGUAGE_GROUP_LABELS[group]}</span>
-                    {review.assignedGroup === group && (
-                      <Check className="ml-auto h-3.5 w-3.5 text-indigo-600" />
-                    )}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
 
             <button
               onClick={handleFlag}
