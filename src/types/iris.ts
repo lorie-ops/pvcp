@@ -10,12 +10,26 @@ export type Priority = 'critique' | 'sensible' | 'standard' | 'simple' | 'a-mode
 export type Status = 'a-relire' | 'en-traitement' | 'valide-publie' |
                      'auto-publie' | 'escalade' | 'a-signaler'
 
+export const LANGUAGE_GROUP_LABELS: Record<Language, string> = {
+  FR: 'Groupe FR',
+  EN: 'Groupe EN',
+  DE: 'Groupe DE',
+  NL: 'Groupe NL',
+  OTHER: 'Groupe Autres',
+}
+
 export interface PriorityChangeLogEntry {
   at: string
   by: string
   from: Priority
   to: Priority
   motif?: string
+}
+
+export interface AssignmentLogEntry {
+  at: string
+  by: string
+  group: Language
 }
 
 export interface Review {
@@ -37,6 +51,8 @@ export interface Review {
   tags: string[]
   sourceUrl: string
   priorityChangeLog?: PriorityChangeLogEntry[]
+  assignedGroup?: Language
+  assignmentLog?: AssignmentLogEntry[]
 }
 
 export const PRIORITY_CONFIG: Record<Priority, {

@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
-import { ArrowLeft, Flag, CheckCircle2, ChevronDown, Check } from 'lucide-react'
+import { ArrowLeft, Flag, CheckCircle2, ChevronDown, Check, Users } from 'lucide-react'
 import { toast } from 'sonner'
 import { useIrisStore } from '@/store/useIrisStore'
-import type { Priority } from '@/types/iris'
-import { PRIORITY_CONFIG } from '@/types/iris'
+import type { Language, Priority } from '@/types/iris'
+import { PRIORITY_CONFIG, LANGUAGE_GROUP_LABELS } from '@/types/iris'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import {
@@ -22,6 +22,7 @@ import { cn } from '@/lib/utils'
 import RecategorizeDialog from './RecategorizeDialog'
 
 const ALL_PRIORITIES: Priority[] = ['critique', 'sensible', 'standard', 'simple', 'a-moderer']
+const LANGUAGE_GROUPS: Language[] = ['FR', 'EN', 'DE', 'NL', 'OTHER']
 
 export default function ReviewDetailPanel() {
   const isOpen = useIrisStore((s) => s.isDetailPanelOpen)
@@ -30,6 +31,7 @@ export default function ReviewDetailPanel() {
   const setDetailPanelOpen = useIrisStore((s) => s.setDetailPanelOpen)
   const updateReviewStatus = useIrisStore((s) => s.updateReviewStatus)
   const recategorizePriority = useIrisStore((s) => s.recategorizePriority)
+  const assignToGroup = useIrisStore((s) => s.assignToGroup)
 
   const [displayedReviewId, setDisplayedReviewId] = useState<string | null>(null)
   const [draftResponse, setDraftResponse] = useState('')
@@ -57,6 +59,7 @@ export default function ReviewDetailPanel() {
   const isReadOnly = review.status === 'valide-publie' || review.status === 'auto-publie'
   const wasModified = draftResponse !== (review.aiResponse ?? '')
   const lastRecategorization = review.priorityChangeLog?.at(-1)
+  const lastAssignment = review.assignmentLog?.at(-1)
 
   const handlePublish = () => {
     setIsPublishing(true)
@@ -72,6 +75,11 @@ export default function ReviewDetailPanel() {
     updateReviewStatus(review.id, 'a-signaler')
     toast.success('Avis signalé')
     handleClose()
+  }
+
+  const handleAssignToGroup = (group: Language) => {
+    assignToGroup(review.id, group)
+    toast.success(`Assigné au ${LANGUAGE_GROUP_LABELS[group]} — membres notifiés`)
   }
 
   return (
@@ -137,12 +145,22 @@ export default function ReviewDetailPanel() {
 
         {/* Body */}
         <div className="flex-1 overflow-y-auto px-5 py-4">
-          {lastRecategorization && (
-            <p className="mb-3 text-xs text-gray-400">
-              Recatégorisé {PRIORITY_CONFIG[lastRecategorization.from].label} → {PRIORITY_CONFIG[lastRecategorization.to].label} le{' '}
-              {formatDateTime(lastRecategorization.at)} par {lastRecategorization.by}
-              {lastRecategorization.motif && <> — « {lastRecategorization.motif} »</>}
-            </p>
+          {(lastRecategorization || lastAssignment) && (
+            <div className="mb-3 space-y-1">
+              {lastRecategorization && (
+                <p className="text-xs text-gray-400">
+                  Recatégorisé {PRIORITY_CONFIG[lastRecategorization.from].label} → {PRIORITY_CONFIG[lastRecategorization.to].label} le{' '}
+                  {formatDateTime(lastRecategorization.at)} par {lastRecategorization.by}
+                  {lastRecategorization.motif && <> — « {lastRecategorization.motif} »</>}
+                </p>
+              )}
+              {lastAssignment && (
+                <p className="text-xs text-gray-400">
+                  Assigné au {LANGUAGE_GROUP_LABELS[lastAssignment.group]} le{' '}
+                  {formatDateTime(lastAssignment.at)} par {lastAssignment.by}
+                </p>
+              )}
+            </div>
           )}
 
           {/* Review info block */}
@@ -241,6 +259,26 @@ export default function ReviewDetailPanel() {
             >
               {isPublishing ? 'Publication en cours...' : '✓ Valider & Publier'}
             </Button>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="w-full">
+                  <Users className="h-3.5 w-3.5" />
+                  Assigner à un groupe
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="center" className="w-[var(--radix-dropdown-menu-trigger-width)]">
+                {LANGUAGE_GROUPS.map((group) => (
+                  <DropdownMenuItem key={group} onClick={() => handleAssignToGroup(group)}>
+                    <span>{LANGUAGE_GROUP_LABELS[group]}</span>
+                    {review.assignedGroup === group && (
+                      <Check className="ml-auto h-3.5 w-3.5 text-indigo-600" />
+                    )}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
             <button
               onClick={handleFlag}
               className="flex w-full items-center justify-center gap-1.5 py-1 text-sm text-gray-500 hover:text-gray-700"

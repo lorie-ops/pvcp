@@ -28,6 +28,7 @@ interface IrisStore {
   toggleBrandFilter: (brand: Brand) => void
   togglePlatformFilter: (platform: Platform) => void
   clearFilters: () => void
+  assignToGroup: (id: string, group: Language) => void
 }
 
 export const useIrisStore = create<IrisStore>((set) => ({
@@ -125,4 +126,15 @@ export const useIrisStore = create<IrisStore>((set) => ({
     return { activePlatformFilters: next }
   }),
   clearFilters: () => set({ activeBrandFilters: new Set(), activePlatformFilters: new Set() }),
+  assignToGroup: (id, group) => set((s) => ({
+    reviews: s.reviews.map((r) => {
+      if (r.id !== id) return r
+      const logEntry = { at: new Date().toISOString(), by: CURRENT_AGENT_NAME, group }
+      return {
+        ...r,
+        assignedGroup: group,
+        assignmentLog: [...(r.assignmentLog ?? []), logEntry],
+      }
+    }),
+  })),
 }))
