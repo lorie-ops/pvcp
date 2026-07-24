@@ -1,34 +1,46 @@
 import { useEffect, useState } from 'react'
-import { ArrowLeft, ExternalLink, AlertTriangle, Flag, CheckCircle2 } from 'lucide-react'
+import { ArrowLeft, Flag, CheckCircle2, ChevronDown, Check, Users } from 'lucide-react'
 import { toast } from 'sonner'
 import { useIrisStore } from '@/store/useIrisStore'
-import type { Review } from '@/types/iris'
-import { PRIORITY_CONFIG } from '@/types/iris'
+import type { Language, Priority } from '@/types/iris'
+import { PRIORITY_CONFIG, LANGUAGE_GROUP_LABELS } from '@/types/iris'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import BrandBadge from '@/components/shared/BrandBadge'
 import StarRating from '@/components/shared/StarRating'
 import StatusBadge from '@/components/shared/StatusBadge'
+import ExpandableText from '@/components/shared/ExpandableText'
 import { platformLabel } from '@/components/shared/PlatformIcon'
-import { formatDate } from '@/lib/format'
-import { highlightKeywords } from '@/lib/highlightKeywords'
+import { formatDate, formatDateTime } from '@/lib/format'
 import { cn } from '@/lib/utils'
-import EscalationDialog from './EscalationDialog'
+import RecategorizeDialog from './RecategorizeDialog'
+
+const ALL_PRIORITIES: Priority[] = ['critique', 'sensible', 'standard', 'simple', 'a-moderer']
+const LANGUAGE_GROUPS: Language[] = ['FR', 'EN', 'DE', 'NL', 'OTHER']
 
 export default function ReviewDetailPanel() {
   const isOpen = useIrisStore((s) => s.isDetailPanelOpen)
   const selectedReview = useIrisStore((s) => s.selectedReview)
+  const reviews = useIrisStore((s) => s.reviews)
   const setDetailPanelOpen = useIrisStore((s) => s.setDetailPanelOpen)
   const updateReviewStatus = useIrisStore((s) => s.updateReviewStatus)
+  const recategorizePriority = useIrisStore((s) => s.recategorizePriority)
+  const assignToGroup = useIrisStore((s) => s.assignToGroup)
 
-  const [displayedReview, setDisplayedReview] = useState<Review | null>(null)
+  const [displayedReviewId, setDisplayedReviewId] = useState<string | null>(null)
   const [draftResponse, setDraftResponse] = useState('')
   const [isPublishing, setIsPublishing] = useState(false)
-  const [isEscalationOpen, setIsEscalationOpen] = useState(false)
+  const [pendingPriority, setPendingPriority] = useState<Priority | null>(null)
 
   useEffect(() => {
     if (selectedReview) {
-      setDisplayedReview(selectedReview)
+      setDisplayedReviewId(selectedReview.id)
       setDraftResponse(selectedReview.aiResponse ?? '')
       setIsPublishing(false)
     }
@@ -36,13 +48,18 @@ export default function ReviewDetailPanel() {
 
   const handleClose = () => setDetailPanelOpen(false)
 
-  if (!displayedReview) return null
+  // Read the live review from the store (not a stale snapshot) so in-place
+  // edits like recategorization are reflected while the panel stays open.
+  const review = reviews.find((r) => r.id === displayedReviewId) ?? null
 
-  const review = displayedReview
+  if (!review) return null
+
   const config = PRIORITY_CONFIG[review.priority]
   const isCritique = review.priority === 'critique'
   const isReadOnly = review.status === 'valide-publie' || review.status === 'auto-publie'
   const wasModified = draftResponse !== (review.aiResponse ?? '')
+  const lastRecategorization = review.priorityChangeLog?.at(-1)
+  const lastAssignment = review.assignmentLog?.at(-1)
 
   const handlePublish = () => {
     setIsPublishing(true)
@@ -54,14 +71,15 @@ export default function ReviewDetailPanel() {
     }, 2000)
   }
 
-  const handleEscalate = () => {
-    updateReviewStatus(review.id, 'escalade')
-  }
-
   const handleFlag = () => {
     updateReviewStatus(review.id, 'a-signaler')
     toast.success('Avis signalé')
     handleClose()
+  }
+
+  const handleAssignToGroup = (group: Language) => {
+    assignToGroup(review.id, group)
+    toast.success(`Assigné au ${LANGUAGE_GROUP_LABELS[group]} — membres notifiés`)
   }
 
   return (
@@ -92,32 +110,86 @@ export default function ReviewDetailPanel() {
             Retour
           </button>
           <div className="flex items-center gap-2">
-            <span
-              className={cn(
-                'rounded-full px-2 py-0.5 text-xs font-semibold',
-                config.bgColor,
-                config.textColor,
-                'border',
-                config.borderColor
-              )}
-            >
-              {config.label}
-            </span>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  className={cn(
+                    'flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold border transition-colors hover:brightness-95',
+                    config.bgColor,
+                    config.textColor,
+                    config.borderColor
+                  )}
+                >
+                  {config.label}
+                  <ChevronDown className="h-3 w-3" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {ALL_PRIORITIES.map((p) => (
+                  <DropdownMenuItem
+                    key={p}
+                    onClick={() => {
+                      if (p !== review.priority) setPendingPriority(p)
+                    }}
+                  >
+                    <span className={cn('mr-2 h-2 w-2 shrink-0 rounded-full', PRIORITY_CONFIG[p].dotColor)} />
+                    {PRIORITY_CONFIG[p].label}
+                    {p === review.priority && <Check className="ml-auto h-3.5 w-3.5 text-indigo-600" />}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
             <StatusBadge status={review.status} />
+            {!isReadOnly && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    className={cn(
+                      'flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-semibold transition-colors hover:brightness-95',
+                      review.assignedGroup
+                        ? 'border-indigo-300 bg-indigo-50 text-indigo-700'
+                        : 'border-gray-300 bg-white text-gray-600'
+                    )}
+                  >
+                    <Users className="h-3 w-3" />
+                    {review.assignedGroup ? LANGUAGE_GROUP_LABELS[review.assignedGroup] : 'Assigner'}
+                    <ChevronDown className="h-3 w-3" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  {LANGUAGE_GROUPS.map((group) => (
+                    <DropdownMenuItem key={group} onClick={() => handleAssignToGroup(group)}>
+                      <span>{LANGUAGE_GROUP_LABELS[group]}</span>
+                      {review.assignedGroup === group && (
+                        <Check className="ml-auto h-3.5 w-3.5 text-indigo-600" />
+                      )}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </div>
         </div>
 
         {/* Body */}
         <div className="flex-1 overflow-y-auto px-5 py-4">
-          <a
-            href={review.sourceUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="mb-4 inline-flex items-center gap-1 text-sm font-medium text-indigo-600 hover:text-indigo-700"
-          >
-            Voir sur {platformLabel(review.platform)}
-            <ExternalLink className="h-3.5 w-3.5" />
-          </a>
+          {(lastRecategorization || lastAssignment) && (
+            <div className="mb-3 space-y-1">
+              {lastRecategorization && (
+                <p className="text-xs text-gray-400">
+                  Recatégorisé {PRIORITY_CONFIG[lastRecategorization.from].label} → {PRIORITY_CONFIG[lastRecategorization.to].label} le{' '}
+                  {formatDateTime(lastRecategorization.at)} par {lastRecategorization.by}
+                  {lastRecategorization.motif && <> — « {lastRecategorization.motif} »</>}
+                </p>
+              )}
+              {lastAssignment && (
+                <p className="text-xs text-gray-400">
+                  Assigné au {LANGUAGE_GROUP_LABELS[lastAssignment.group]} le{' '}
+                  {formatDateTime(lastAssignment.at)} par {lastAssignment.by}
+                </p>
+              )}
+            </div>
+          )}
 
           {/* Review info block */}
           <div className="mb-5">
@@ -126,6 +198,8 @@ export default function ReviewDetailPanel() {
               <BrandBadge brand={review.brand} />
             </div>
             <div className="mb-3 flex items-center gap-2 text-xs text-gray-500">
+              <span className="font-medium text-gray-700">{review.authorName}</span>
+              <span>·</span>
               <StarRating rating={review.rating} />
               <span>·</span>
               <span>{formatDate(review.reviewDate)}</span>
@@ -149,17 +223,7 @@ export default function ReviewDetailPanel() {
             <blockquote
               className={cn('rounded-r-md border-l-4 bg-gray-50 px-3 py-2.5 text-sm italic text-gray-700', config.borderColor)}
             >
-              {isCritique
-                ? highlightKeywords(review.reviewText).map((part) =>
-                    typeof part === 'string' ? (
-                      part
-                    ) : (
-                      <mark key={part.key} className="rounded bg-red-100 px-0.5 font-semibold not-italic text-red-700">
-                        {part.text}
-                      </mark>
-                    )
-                  )
-                : review.reviewText}
+              <ExpandableText>{review.reviewText}</ExpandableText>
             </blockquote>
           </div>
 
@@ -184,32 +248,13 @@ export default function ReviewDetailPanel() {
             </div>
           )}
 
-          {/* Critique lockout */}
-          {isCritique && !isReadOnly && (
-            <div className="mb-5 rounded-md border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700">
-              <div className="flex items-start gap-2">
-                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-                <span>Aucune réponse automatique autorisée pour ce niveau de priorité</span>
-              </div>
-            </div>
-          )}
-
-          {/* AI response editor */}
-          {!isCritique && !isReadOnly && (
+          {/* AI response editor — available for every priority, including critique */}
+          {!isReadOnly && (
             <div className="mb-5">
               <div className="mb-2 flex items-center gap-2">
                 <h3 className="text-sm font-semibold text-gray-900">Réponse suggérée par Iris</h3>
                 <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-semibold text-indigo-700">
                   IA
-                </span>
-              </div>
-
-              <div className="mb-2 flex flex-wrap gap-1.5">
-                <span className="rounded-full border border-gray-200 px-2 py-0.5 text-xs text-gray-500">
-                  FAQ PVCP
-                </span>
-                <span className="rounded-full border border-gray-200 px-2 py-0.5 text-xs text-gray-500">
-                  Fiche parc {review.siteName}
                 </span>
               </div>
 
@@ -234,67 +279,41 @@ export default function ReviewDetailPanel() {
         {/* Footer actions */}
         {!isReadOnly && (
           <div className="shrink-0 space-y-2 border-t border-gray-200 px-5 py-4">
-            {isCritique ? (
-              <>
-                <Button
-                  variant="destructive"
-                  className="w-full"
-                  onClick={() => setIsEscalationOpen(true)}
-                >
-                  ↗ Escalader à Vanessa Klein
-                </Button>
-                <Button variant="outline" className="w-full" onClick={handleFlag}>
-                  <Flag className="h-3.5 w-3.5" />
-                  Signaler l'avis
-                </Button>
-              </>
-            ) : (
-              <>
-                <Button className="w-full" disabled={isPublishing} onClick={handlePublish}>
-                  {isPublishing ? 'Publication en cours...' : '✓ Valider & Publier'}
-                </Button>
-                <Button
-                  variant="outlineDestructive"
-                  className="w-full"
-                  onClick={() => setIsEscalationOpen(true)}
-                >
-                  Escalader
-                </Button>
-                <button
-                  onClick={handleFlag}
-                  className="flex w-full items-center justify-center gap-1.5 py-1 text-sm text-gray-500 hover:text-gray-700"
-                >
-                  <Flag className="h-3.5 w-3.5" />
-                  À signaler
-                </button>
-              </>
-            )}
-          </div>
-        )}
-
-        {isReadOnly && (
-          <div className="shrink-0 border-t border-gray-200 px-5 py-4">
-            <a
-              href={review.sourceUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="flex w-full items-center justify-center gap-1.5 rounded-md border border-gray-300 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            <Button
+              className="w-full"
+              variant={isCritique ? 'destructive' : 'default'}
+              disabled={isPublishing}
+              onClick={handlePublish}
             >
-              Voir sur {platformLabel(review.platform)}
-              <ExternalLink className="h-3.5 w-3.5" />
-            </a>
+              {isPublishing ? 'Publication en cours...' : '✓ Valider & Publier'}
+            </Button>
+
+            <button
+              onClick={handleFlag}
+              className="flex w-full items-center justify-center gap-1.5 py-1 text-sm text-gray-500 hover:text-gray-700"
+            >
+              <Flag className="h-3.5 w-3.5" />
+              À signaler
+            </button>
           </div>
         )}
       </div>
 
-      <EscalationDialog
-        open={isEscalationOpen}
-        onOpenChange={setIsEscalationOpen}
-        onConfirm={() => {
-          handleEscalate()
-          handleClose()
-        }}
-      />
+      {pendingPriority && (
+        <RecategorizeDialog
+          open={pendingPriority !== null}
+          fromPriority={review.priority}
+          toPriority={pendingPriority}
+          onOpenChange={(open) => {
+            if (!open) setPendingPriority(null)
+          }}
+          onConfirm={(motif) => {
+            recategorizePriority(review.id, pendingPriority, motif)
+            toast.success(`Priorité changée en ${PRIORITY_CONFIG[pendingPriority].label}`)
+            setPendingPriority(null)
+          }}
+        />
+      )}
     </>
   )
 }

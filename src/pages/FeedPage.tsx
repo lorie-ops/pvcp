@@ -1,16 +1,20 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useLocation } from 'react-router-dom'
 import { Inbox } from 'lucide-react'
 import { useIrisStore } from '@/store/useIrisStore'
 import type { Priority } from '@/types/iris'
 import PriorityCounters from '@/components/feed/PriorityCounters'
 import PrioritySection from '@/components/feed/PrioritySection'
+import BulkActionBar from '@/components/feed/BulkActionBar'
 
 const SECTION_ORDER: Priority[] = ['critique', 'sensible', 'standard', 'simple']
 
 export default function FeedPage() {
   const reviews = useIrisStore((s) => s.reviews)
   const activeLanguage = useIrisStore((s) => s.activeLanguage)
+  const clearSelection = useIrisStore((s) => s.clearSelection)
+  const activeBrandFilters = useIrisStore((s) => s.activeBrandFilters)
+  const activePlatformFilters = useIrisStore((s) => s.activePlatformFilters)
   const location = useLocation()
 
   const scope = location.pathname.endsWith('/signales')
@@ -19,14 +23,20 @@ export default function FeedPage() {
       ? 'archive'
       : 'queue'
 
+  useEffect(() => {
+    clearSelection()
+  }, [activeLanguage, scope, clearSelection])
+
   const scopedReviews = useMemo(() => {
     return reviews.filter((r) => {
       if (activeLanguage !== 'ALL' && r.language !== activeLanguage) return false
+      if (activeBrandFilters.size > 0 && !activeBrandFilters.has(r.brand)) return false
+      if (activePlatformFilters.size > 0 && !activePlatformFilters.has(r.platform)) return false
       if (scope === 'signales') return r.status === 'a-signaler'
       if (scope === 'archive') return r.status === 'valide-publie' || r.status === 'auto-publie'
       return r.status !== 'a-signaler'
     })
-  }, [reviews, activeLanguage, scope])
+  }, [reviews, activeLanguage, activeBrandFilters, activePlatformFilters, scope])
 
   const reviewsByPriority = useMemo(() => {
     const map: Record<Priority, typeof reviews> = {
@@ -64,6 +74,8 @@ export default function FeedPage() {
           <PrioritySection key={priority} priority={priority} reviews={reviewsByPriority[priority]} />
         ))
       )}
+
+      <BulkActionBar />
     </div>
   )
 }
