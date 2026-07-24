@@ -1,10 +1,10 @@
 import { useMemo } from 'react'
-import { Search, Bell } from 'lucide-react'
+import { Search } from 'lucide-react'
 import { useIrisStore } from '@/store/useIrisStore'
 import type { Language } from '@/types/iris'
 import { cn } from '@/lib/utils'
-import { toast } from 'sonner'
 import FiltersDropdown from './FiltersDropdown'
+import NotificationsDropdown from './NotificationsDropdown'
 
 const LANGUAGE_TABS: { key: Language; label: string }[] = [
   { key: 'FR', label: 'FR' },
@@ -35,11 +35,6 @@ export default function TopBar() {
     }
     return stats
   }, [reviews])
-
-  const criticalUnseenCount = useMemo(
-    () => reviews.filter((r) => r.priority === 'critique' && r.status === 'a-relire').length,
-    [reviews]
-  )
 
   return (
     <header className="flex h-[52px] shrink-0 items-center justify-between border-b border-gray-200 bg-white px-4">
@@ -87,18 +82,7 @@ export default function TopBar() {
 
         <FiltersDropdown />
 
-        <button
-          onClick={() => toast(`${criticalUnseenCount} avis critiques à traiter`)}
-          className="relative flex h-8 w-8 items-center justify-center rounded-md text-gray-500 hover:bg-gray-100"
-          aria-label="Notifications"
-        >
-          <Bell className="h-4 w-4" />
-          {criticalUnseenCount > 0 && (
-            <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
-              {criticalUnseenCount}
-            </span>
-          )}
-        </button>
+        <NotificationsDropdown />
       </div>
     </header>
   )
